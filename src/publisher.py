@@ -57,6 +57,26 @@ class CommandPublisher:
         return cast(bytes, response[1]).decode()
 
 
+class QueryPublisher:
+    def __init__(self, redis_client: Redis):
+        self._redis_client = redis_client
+
+    def send_message(self, message_body: str) -> MessageResult:
+        message_id = self._redis_client.xadd(
+            name='cqrs_stream',
+            fields={
+                'type': MessageType.QUERY.value,
+                'message': message_body,
+            },
+        )
+
+        # TODO: obtain with transaction
+        response: BLPOPResponse = self._redis_client.blpop(keys=[message_id], timeout=60)
+        self._redis_client.delete(message_id)
+
+        return cast(bytes, response[1]).decode()
+
+
 class Testing:
     def __init__(self, redis_client: Redis):
         self._redis_client = redis_client
@@ -76,6 +96,11 @@ class Testing:
         message_result = publisher.sync_send_message(message_body='hello world')
         logging.debug(f'sync command was sended, message_result = "{message_result}"')
 
+    def send_query(self) -> None:
+        publisher = QueryPublisher(redis_client=self._redis_client)
+        message_result = publisher.send_message(message_body='hello world')
+        logging.debug(f'sync command was sended, message_result = "{message_result}"')
+
 
 def main():
     testing = Testing(redis_client=Redis(host='localhost', port=16379))
@@ -88,9 +113,13 @@ def main():
     # testing.send_async_command()
     # testing.send_async_command()
 
-    testing.send_sync_command()
-    testing.send_sync_command()
-    testing.send_sync_command()
+    # testing.send_sync_command()
+    # testing.send_sync_command()
+    # testing.send_sync_command()
+
+    testing.send_query()
+    testing.send_query()
+    testing.send_query()
 
 
 if __name__ == '__main__':
