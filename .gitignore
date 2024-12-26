@@ -1,0 +1,24 @@
+# ENV
+env*
+
+# python setup
+**/*.pyc
+**/__pycache__
+**/*.egg-info
+
+# pytest
+.pytest_cache
+
+# IDE
+.vscode
+
+# OS
+.DS_Store
+
+# pyvis
+/lib
+**/*.html
+
+requirements/to_develop.txt
+setup.cfg
+.pre-commit-config.yaml
